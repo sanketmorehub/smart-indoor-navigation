@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SmartNav.Api/SmartNav.Api.csproj" />
+    <Project Path="src/SmartNav.Application/SmartNav.Application.csproj" />
+    <Project Path="src/SmartNav.Domain/SmartNav.Domain.csproj" />
+    <Project Path="src/SmartNav.Infrastructure/SmartNav.Infrastructure.csproj" />
+    <Project Path="src/SmartNav.Navigation/SmartNav.Navigation.csproj" />
+    <Project Path="src/SmartNav.Shared/SmartNav.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SmartNav.Infrastructure.Tests/SmartNav.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
