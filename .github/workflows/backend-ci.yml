@@ -1,0 +1,15 @@
+name: backend-ci
+on:
+  push: { branches: [main], paths: ["backend/**", ".github/workflows/backend-ci.yml"] }
+  pull_request: { paths: ["backend/**"] }
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "9.0.x" }
+      - run: dotnet restore SmartNav.slnx
+      - run: dotnet build SmartNav.slnx --no-restore -c Release
+      - run: dotnet test SmartNav.slnx --no-build -c Release --verbosity normal

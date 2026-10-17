@@ -1,0 +1,31 @@
+# Local development dependencies. Production uses managed MySQL + S3-compatible storage.
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: smartnav-mysql
+    environment:
+      MYSQL_DATABASE: smartnav
+      MYSQL_USER: smartnav
+      MYSQL_PASSWORD: smartnav_dev_pw        # dev only - never reuse in production
+      MYSQL_ROOT_PASSWORD: smartnav_root_dev_pw
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    ports: ["3306:3306"]
+    volumes: [mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 20
+
+  minio:   # S3-compatible object storage for floor maps / logos (used from Phase 5)
+    image: minio/minio:latest
+    container_name: smartnav-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: smartnav
+      MINIO_ROOT_PASSWORD: smartnav_dev_pw
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [minio-data:/data]
+
+volumes:
+  mysql-data:
+  minio-data:
