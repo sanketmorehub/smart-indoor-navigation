@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SmartNav.Application\SmartNav.Application.csproj" />
+    <ProjectReference Include="..\SmartNav.Navigation\SmartNav.Navigation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

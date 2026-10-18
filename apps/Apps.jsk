@@ -1,0 +1,437 @@
+
+import { useMemo, useState } from "react";
+import "./App.css";
+
+const places = [
+  { id: 1, name: "Reception", category: "Patient services", floor: "Ground Floor", code: "G-01", x: 13, y: 48, icon: "⌂" },
+  { id: 2, name: "Emergency", category: "Emergency care", floor: "Ground Floor", code: "G-02", x: 30, y: 20, icon: "+" },
+  { id: 3, name: "Medical Store", category: "Pharmacy", floor: "Ground Floor", code: "G-03", x: 43, y: 72, icon: "+" },
+  { id: 4, name: "Lift A", category: "Vertical connector", floor: "Ground Floor", code: "G-L1", x: 52, y: 48, icon: "↕" },
+  { id: 5, name: "Stairs 1", category: "Vertical connector", floor: "Ground Floor", code: "G-S1", x: 66, y: 72, icon: "⇧" },
+  { id: 6, name: "Cardiology", category: "Specialist clinic", floor: "First Floor", code: "F-01", x: 28, y: 25, icon: "♡" },
+  { id: 7, name: "Neurology", category: "Specialist clinic", floor: "First Floor", code: "F-02", x: 68, y: 25, icon: "✳" },
+  { id: 8, name: "Lift A", category: "Vertical connector", floor: "First Floor", code: "F-L1", x: 52, y: 48, icon: "↕" },
+  { id: 9, name: "Stairs 1", category: "Vertical connector", floor: "First Floor", code: "F-S1", x: 66, y: 72, icon: "⇧" },
+];
+
+const steps = [
+  "Start at your current location",
+  "Follow the main hospital corridor",
+  "Continue to the destination signs",
+  "Arrive at your selected department",
+];
+
+function App() {
+  const [floor, setFloor] = useState("Ground Floor");
+  const [destination, setDestination] = useState("Emergency");
+  const [search, setSearch] = useState("");
+  const [accessible, setAccessible] = useState(false);
+  const [routeShown, setRouteShown] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const filtered = useMemo(
+    () => places.filter((p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase())
+    ),
+    [search]
+  );
+
+  const target =
+    places.find((p) => p.name === destination && p.floor === floor) ||
+    places.find((p) => p.name === destination);
+
+  const floorPlaces = places.filter((p) => p.floor === floor);
+  const start =
+    floorPlaces.find((p) => p.name === "Reception") ||
+    floorPlaces.find((p) => p.name === "Lift A") ||
+    floorPlaces[0];
+  const end =
+    target && target.floor === floor
+      ? target
+      : floorPlaces.find((p) => p.name === "Lift A") || floorPlaces[0];
+
+  function choosePlace(place) {
+    setDestination(place.name);
+    setFloor(place.floor);
+    setSearch("");
+    setRouteShown(false);
+    setMenuOpen(false);
+  }
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="#home" aria-label="ABC Hospital home">
+          <span className="brand-mark">✚</span>
+          <span>
+            <strong>ABC Hospital</strong>
+            <small>SMART WAYFINDING</small>
+          </span>
+        </a>
+
+        <nav className={menuOpen ? "nav-links nav-open" : "nav-links"}>
+          <a className="nav-active" href="#navigate" onClick={() => setMenuOpen(false)}>
+            Find a location
+          </a>
+          <a href="#map" onClick={() => setMenuOpen(false)}>Hospital map</a>
+          <a href="#help" onClick={() => setMenuOpen(false)}>Help & support</a>
+        </nav>
+
+        <div className="header-right">
+          <span className="open-indicator"></span>
+          <span>Visitor portal</span>
+        </div>
+
+        <button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+          ☰
+        </button>
+      </header>
+
+      <main id="home">
+        <section className="welcome">
+          <div className="welcome-copy">
+            <div className="eyebrow">
+              <span className="eyebrow-dot"></span> YOUR VISIT, MADE EASIER
+            </div>
+            <h1>
+              Find your way.<br />
+              <span>Feel taken care of.</span>
+            </h1>
+            <p>
+              Navigate ABC Hospital with confidence. Find departments, explore floors, and get clear directions to your destination.
+            </p>
+            <div className="welcome-tags">
+              <span>✓ Easy directions</span>
+              <span>✓ Floor-by-floor maps</span>
+              <span>✓ Accessibility options</span>
+            </div>
+          </div>
+
+          <div className="welcome-art" aria-hidden="true">
+            <div className="art-circle circle-one"></div>
+            <div className="art-circle circle-two"></div>
+            <div className="hospital-building">
+              <div className="building-cross">✚</div>
+              <div className="building-windows">
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+              <div className="building-door"></div>
+            </div>
+            <div className="art-pin">
+              <span>✚</span>
+              <small>ABC Hospital</small>
+            </div>
+            <div className="art-route"></div>
+          </div>
+        </section>
+
+        <section className="content-grid" id="navigate">
+          <aside className="search-panel">
+            <div className="panel-heading">
+              <span className="heading-icon">⌕</span>
+              <div>
+                <h2>Where do you need to go?</h2>
+                <p>Choose a destination to get started.</p>
+              </div>
+            </div>
+
+            <label className="field-label" htmlFor="place-search">
+              Search departments or services
+            </label>
+            <div className="search-box">
+              <span>⌕</span>
+              <input
+                id="place-search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="e.g. Cardiology, Pharmacy..."
+              />
+              <kbd>/</kbd>
+            </div>
+
+            {search && (
+              <div className="search-results">
+                {filtered.length ? (
+                  filtered.map((p) => (
+                    <button key={p.id} className="result-item" onClick={() => choosePlace(p)}>
+                      <span className="result-icon">{p.icon}</span>
+                      <span>
+                        <strong>{p.name}</strong>
+                        <small>
+                          {p.category} · {p.floor}
+                        </small>
+                      </span>
+                      <span className="result-arrow">↗</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="empty-result">No matching locations found.</p>
+                )}
+              </div>
+            )}
+
+            <div className="field-label popular-label">POPULAR DESTINATIONS</div>
+            <div className="destination-list">
+              {places
+                .filter((p) => !["Lift A", "Stairs 1"].includes(p.name))
+                .slice(0, 6)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    className={destination === p.name && floor === p.floor ? "destination selected" : "destination"}
+                    onClick={() => choosePlace(p)}
+                  >
+                    <span className={"destination-icon " + (p.name === "Emergency" ? "emergency-icon" : "")}>
+                      {p.icon}
+                    </span>
+                    <span className="destination-text">
+                      <strong>{p.name}</strong>
+                      <small>{p.category}</small>
+                    </span>
+                    <span className="destination-arrow">→</span>
+                  </button>
+                ))}
+            </div>
+
+            <div className="accessibility-box">
+              <div>
+                <strong>Accessible route</strong>
+                <small>Prefer lifts and step-free paths</small>
+              </div>
+              <button
+                className={accessible ? "toggle toggle-on" : "toggle"}
+                onClick={() => {
+                  setAccessible(!accessible);
+                  setRouteShown(false);
+                }}
+                aria-label="Toggle accessible route"
+              >
+                <span></span>
+              </button>
+            </div>
+
+            <button className="primary-button" onClick={() => setRouteShown(true)}>
+              Find my route <span>→</span>
+            </button>
+            <p className="demo-note">Demo directions for preview · Not for emergency use</p>
+          </aside>
+
+          <section className="map-panel" id="map">
+            <div className="map-header">
+              <div>
+                <div className="section-eyebrow">INTERACTIVE FLOOR PLAN</div>
+                <h2>Hospital map</h2>
+                <p>Explore departments and facilities</p>
+              </div>
+              <span className="map-status">
+                <span></span> Demo map
+              </span>
+            </div>
+
+            <div className="floor-tabs" role="tablist" aria-label="Hospital floor">
+              <button
+                role="tab"
+                aria-selected={floor === "Ground Floor"}
+                className={floor === "Ground Floor" ? "floor-tab active" : "floor-tab"}
+                onClick={() => {
+                  setFloor("Ground Floor");
+                  setRouteShown(false);
+                }}
+              >
+                <span>G</span> Ground Floor
+              </button>
+              <button
+                role="tab"
+                aria-selected={floor === "First Floor"}
+                className={floor === "First Floor" ? "floor-tab active" : "floor-tab"}
+                onClick={() => {
+                  setFloor("First Floor");
+                  setRouteShown(false);
+                }}
+              >
+                <span>1</span> First Floor
+              </button>
+            </div>
+
+            <div className="map-canvas">
+              <div className="map-grid"></div>
+              <div className="map-room room-a"><span>WAITING AREA</span></div>
+              <div className="map-room room-b"><span>CONSULTATION</span></div>
+              <div className="map-room room-c"><span>HALLWAY</span></div>
+              <div className="map-room room-d"><span>DEPARTMENT</span></div>
+              <div className="map-room room-e"><span>SUPPORT</span></div>
+
+              <div className="corridor corridor-h"></div>
+              <div className="corridor corridor-v"></div>
+              <div className="corridor corridor-h2"></div>
+
+              {routeShown && (
+                <svg className="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polyline
+                    points={`${start.x},${start.y} ${start.x},48 ${end.x},48 ${end.x},${end.y}`}
+                    fill="none"
+                    stroke="#168b83"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="2.8 2"
+                  />
+                </svg>
+              )}
+
+              {floorPlaces.map((p) => (
+                <button
+                  key={p.id}
+                  title={`${p.name} · ${p.code}`}
+                  className={
+                    "map-pin " +
+                    (routeShown && end.id === p.id ? "pin-target" : "") +
+                    (p.name === "Emergency" ? " pin-emergency" : "")
+                  }
+                  style={{ left: p.x + "%", top: p.y + "%" }}
+                  onClick={() => choosePlace(p)}
+                >
+                  <span className="pin-symbol">{p.icon}</span>
+                  <span className="pin-label">{p.name}</span>
+                </button>
+              ))}
+
+              {routeShown && <div className="map-legend"><span></span> Suggested route</div>}
+
+              <div className="map-compass">
+                N<br />↑
+              </div>
+
+              <div className="map-zoom">
+                <button onClick={(e) => e.currentTarget.closest(".map-canvas").classList.toggle("map-zoomed")} aria-label="Zoom map">
+                  ＋
+                </button>
+                <button onClick={(e) => e.currentTarget.closest(".map-canvas").classList.toggle("map-zoomed")} aria-label="Zoom out">
+                  −
+                </button>
+              </div>
+            </div>
+
+            <div className="map-footer">
+              <div className="legend-item">
+                <span className="legend-dot current-dot"></span>Facilities
+              </div>
+              <div className="legend-item">
+                <span className="legend-dot emergency-dot"></span>Emergency
+              </div>
+              <div className="legend-item">
+                <span className="legend-line"></span>Route preview
+              </div>
+              <span className="map-floor-label">{floor}</span>
+            </div>
+          </section>
+        </section>
+
+        <section className="route-section" aria-live="polite">
+          <div className="route-heading">
+            <div>
+              <div className="section-eyebrow">YOUR JOURNEY</div>
+              <h2>{routeShown ? "Your route is ready" : "Your directions, made simple"}</h2>
+              <p>
+                {routeShown
+                  ? `Destination: ${destination} · ${target?.floor || floor}`
+                  : "Choose a destination and select “Find my route” to preview directions."}
+              </p>
+            </div>
+            <span className="route-badge">{routeShown ? "✓ Preview generated" : "Waiting for destination"}</span>
+          </div>
+
+          <div className="route-details">
+            <div className="route-stat">
+              <span className="stat-icon">↗</span>
+              <div>
+                <small>ESTIMATED WALK</small>
+                <strong>{routeShown ? (accessible ? "4–6 min" : "3–5 min") : "— min"}</strong>
+              </div>
+            </div>
+
+            <div className="route-stat">
+              <span className="stat-icon">⇢</span>
+              <div>
+                <small>DESTINATION</small>
+                <strong>{routeShown ? destination : "Not selected"}</strong>
+              </div>
+            </div>
+
+            <div className="route-stat">
+              <span className="stat-icon">♿</span>
+              <div>
+                <small>ROUTE TYPE</small>
+                <strong>{accessible ? "Accessible preference" : "Standard route"}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="directions-list">
+            {steps.map((step, i) => (
+              <div className="direction-step" key={step}>
+                <span className="step-number">{i + 1}</span>
+                <div>
+                  <strong>
+                    {routeShown
+                      ? step
+                      : [
+                          "Choose your destination",
+                          "Select your floor",
+                          "Preview the route",
+                          "Follow the displayed directions",
+                        ][i]}
+                  </strong>
+                  <small>
+                    {routeShown
+                      ? i === 0
+                        ? "Begin at the indicated starting point."
+                        : i === 3
+                          ? `Look for signs for ${destination}.`
+                          : "Follow hospital wayfinding signs."
+                      : " "}
+                  </small>
+                </div>
+                {i === 3 && routeShown ? <span className="finish-icon">✓</span> : null}
+              </div>
+            ))}
+          </div>
+
+          <div className="route-disclaimer" id="help">
+            <span>ⓘ</span>
+            <p>
+              <strong>Navigation preview</strong> — This prototype uses sample map geometry and estimated walking times. Confirm directions with hospital staff. In an emergency, contact hospital personnel immediately.
+            </p>
+          </div>
+        </section>
+
+        <footer className="footer">
+          <a className="brand footer-brand" href="#home">
+            <span className="brand-mark">✚</span>
+            <span>
+              <strong>ABC Hospital</strong>
+              <small>SMART WAYFINDING</small>
+            </span>
+          </a>
+          <span>Helping every visitor find their way.</span>
+          <span>Visitor portal · Demo</span>
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+export default App;
+

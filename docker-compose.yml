@@ -1,4 +1,4 @@
-# Local development dependencies. Production uses managed MySQL + S3-compatible storage.
+# Local demo stack. Replace development credentials and add HTTPS before public deployment.
 services:
   mysql:
     image: mysql:8.0
@@ -6,17 +6,60 @@ services:
     environment:
       MYSQL_DATABASE: smartnav
       MYSQL_USER: smartnav
-      MYSQL_PASSWORD: smartnav_dev_pw        # dev only - never reuse in production
-      MYSQL_ROOT_PASSWORD: smartnav_root_dev_pw
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-smartnav_dev_pw}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-smartnav_root_dev_pw}
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
-    ports: ["3306:3306"]
+    ports: ["127.0.0.1:3306:3306"]
     volumes: [mysql-data:/var/lib/mysql]
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       retries: 20
 
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: smartnav-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Default: "Server=mysql;Port=3306;Database=smartnav;User=smartnav;Password=${MYSQL_PASSWORD:-smartnav_dev_pw};GuidFormat=Binary16"
+      Cors__AllowedOrigins__0: http://localhost:8080
+      Cors__AllowedOrigins__1: http://127.0.0.1:8080
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["dotnet SmartNav.Api.dll migrate-and-seed && dotnet SmartNav.Api.dll --urls http://0.0.0.0:8080"]
+    ports: ["127.0.0.1:5062:8080"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  visitor:
+    build:
+      context: .
+      dockerfile: apps/Dockerfile
+    container_name: smartnav-visitor
+    ports: ["8080:80"]
+    depends_on: [api]
+    restart: unless-stopped
+
+  lan-https:
+    image: caddy:2-alpine
+    container_name: smartnav-lan-https
+    profiles: ["lan-https"]
+    environment:
+      LAN_HOST: ${LAN_HOST:-localhost}
+    ports: ["8443:8443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [visitor]
+    restart: unless-stopped
+
   minio:   # S3-compatible object storage for floor maps / logos (used from Phase 5)
+    profiles: ["maps-storage"]
     image: minio/minio:latest
     container_name: smartnav-minio
     command: server /data --console-address ":9001"
@@ -29,3 +72,5 @@ services:
 volumes:
   mysql-data:
   minio-data:
+  caddy-data:
+  caddy-config:
